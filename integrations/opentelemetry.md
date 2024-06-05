@@ -90,6 +90,27 @@ service:
          receivers: [prometheus]          
 ```
 
+### Scraping Host Metrics
+
+In the OpenTelemetry config file, you can include a scrape section to collect host metrics such as CPU, Memory, Disk, Network, Load, Filesystem, Paging, and Processes.
+
+```
+receivers:
+  hostmetrics:
+    collection_interval: 60s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      network:
+      load:
+      filesystem:
+      paging:
+      processes:
+      process:      
+```
+Some metrics are ommitted by default. To enable them please refer to this documentation: https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/receiver/hostmetricsreceiver/internal/scraper
+
 ### OpenTelemetry Logs and Traces
 
 Apica Ascent supports ingesting Logs and Traces using OpenTelementry agents and collectors. We also maintain compatibility with Jaeger agent and collectors for ingesting logs and traces. This provides broad support for anyone with existing Jaeger agents and collectors deployed as well as someone wanting to adopt the emerging OpenTelemetry standard.
@@ -137,10 +158,26 @@ The Jar file can be found here - [https://github.com/open-telemetry/opentelemetr
 the Prometheus metrics options create a pull metric instance that should be scraped by an external Prometheus compatible instance
 {% endhint %}
 
-<table><thead><tr><th width="273.3437417078941" align="right">JAVA_OPTS</th><th align="center">Value</th><th align="center">Notes</th></tr></thead><tbody><tr><td align="right">otel.service_name</td><td align="center">&#x3C;User defined></td><td align="center">Give a service name to group your OpenTelemetry data traces under this service name</td></tr><tr><td align="right">otel.traces.exporter</td><td align="center">jaeger</td><td align="center"></td></tr><tr><td align="right">otel.exporter.jaeger.endpoint</td><td align="center">http://&#x3C;Apica Ascent ENDPOINT>:14250</td><td align="center">Apica Ascent OpenTelemetry traces endpoint</td></tr><tr><td align="right"></td><td align="center">https://&#x3C;Apica Ascent ENDPOINT>:14250</td><td align="center">TLS must be enabled on the collector port on the Apica Ascent server</td></tr><tr><td align="right">javaagent</td><td align="center">&#x3C;PATH TO JAR>/opentelemetry-javaagent.jar</td><td align="center">OpenTelemetry agent Jar file</td></tr><tr><td align="right">otel.metrics.exporter</td><td align="center">prometheus</td><td align="center"></td></tr><tr><td align="right">otel.exporter.prometheus.port</td><td align="center"></td><td align="center">Default port is 9464</td></tr><tr><td align="right">otel.exporter.prometheus.host</td><td align="center"></td><td align="center">Default is 0.0.0.0</td></tr></tbody></table>
+<table><thead><tr><th width="273.3437417078941" align="right">JAVA_OPTS</th><th align="center">Value</th><th align="center">Notes</th></tr></thead><tbody><tr><td align="right">otel.service_name</td><td align="center">&#x3C;User defined></td><td align="center">Give a service name to group your OpenTelemetry data traces under this service name</td></tr><tr><td align="right">otel.traces.exporter</td><td align="center">jaeger</td><td align="center"></td></tr><tr><td align="right">otel.exporter.jaeger.endpoint</td><td align="center">http://&#x3C;Apica Ascent ENDPOINT>:14250</td><td align="center">Apica Ascent OpenTelemetry traces endpoint</td></tr><tr><td align="right"></td><td align="center">https://&#x3C;Apica Ascent ENDPOINT>:14250</td><td align="center">TLS must be enabled on the collector port on the Apica Ascent server</td></tr><tr><td align="right">javaagent</td><td align="center">&#x3C;PATH TO JAR>/opentelemetry-javaagent.jar</td><td align="center">OpenTelemetry agent Jar file</td></tr><tr><td align="right">otel.jmx.config</td><td align="center">&#x3C;PATH TO CONFIG>/javaagent-config.yaml</td><td align="center">OpenTelemetry java agent config yaml file</td></tr><tr><td align="right">otel.metrics.exporter</td><td align="center">prometheus</td><td align="center"></td></tr><tr><td align="right">otel.exporter.prometheus.port</td><td align="center"></td><td align="center">Default port is 9464</td></tr><tr><td align="right">otel.exporter.prometheus.host</td><td align="center"></td><td align="center">Default is 0.0.0.0</td></tr></tbody></table>
 
 <pre class="language-shell" data-overflow="wrap" data-line-numbers><code class="lang-shell">$> java -javaagent:opentelemetry-javaagent.jar -Dotel.exporter.otlp.certificate=./ca.crt -Dotel.traces.exporter=jaeger -Dotel.exporter.jaeger.endpoint=<a data-footnote-ref href="#user-content-fn-1">https</a>://$APICA_ASCENT_SERVER:14250 -Dotel.metrics.exporter=none -Dotel.service-name=java-petclinic-sample-app -Dotel.exporter.logging.prefix -jar -Djava.util.logging.config.file=logging.properties target/spring-petclinic-2.7.0-SNAPSHOT.jar --server.port=8080
 </code></pre>
+
+{% hint style="info" %}
+The Java Agent Config will capture metrics from however many beans you specify. For example, If you wanted to collect metrics from the "G1 Old Generation" of type "GarbageCollector": 
+```
+rules:
+  - bean: "java.lang:type=GarbageCollector,name=G1 Old Generation"
+    mapping:
+      CollectionCount:
+        metric: gc_collect_count_g1_old
+      CollectionTime:
+        metric: gc_collect_time_g1_old
+```
+
+This would yield the CollectionCount and the CollectionTime and name the metrics as "gc_collect_count_g1_old" and "gc_collect_time_g1_old".
+{% endhint %}
+
 
 {% hint style="info" %}
 When using TLS please ensure you have the CA cert of the Apica Ascent environment installed in the JVM Cert store. Instructions can be found here - [https://connect2id.com/blog/importing-ca-root-cert-into-jvm-trust-store](https://connect2id.com/blog/importing-ca-root-cert-into-jvm-trust-store)
